@@ -100,6 +100,9 @@ dialog h2, dialog h3 { margin: 0 0 16px; letter-spacing: -0.5px; }
 #welcome p { color: var(--sub); font-size: 14px; margin: 0 0 20px; }
 dialog form > button, dialog form > a, #welcome button { display: block; width: 100%; margin-top: 8px; }
 .btn, dialog button { border-radius: 12px; padding: 14px; border: 0; background: var(--field); text-align: center; text-decoration: none; font-size: 15px; font-weight: 600; color: var(--sub); }
+dialog .sec { margin: 18px 0 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+dialog .sec:first-of-type { margin-top: 0; }
+dialog hr { border: 0; border-top: 1px solid var(--field); margin: 20px 0 12px; }
 .primary { background: var(--accent) !important; color: #fff !important; }
 .danger { color: var(--up) !important; }
 .row { display: flex; gap: 8px; margin-top: 20px; }

@@ -60,12 +60,13 @@
   <dialog id="menu">
     <form method="dialog">
       <h3>설정</h3>
-      <p id="modeInfo" class="muted"></p>
+      <p class="sec">구글 시트</p>
+      <button type="button" id="connectBtn" class="primary">구글 로그인 (시트 불러오기)</button>
       <a id="openSheet" target="_blank" rel="noopener" class="btn ghost">구글 시트에서 열기</a>
-      <button type="button" id="syncBtn" class="ghost">구글 시트에서 불러오기</button>
-      <button type="button" id="connectBtn" class="primary">구글 로그인 (체험 데이터를 시트에 저장)</button>
+      <p class="sec">가져오기</p>
       <button type="button" id="importBtn" class="ghost">AI로 데이터 가져오기</button>
-      <button type="button" id="logoutBtn" class="danger">로그아웃 (이 기기 데이터 지우기)</button>
+      <hr />
+      <button type="button" id="logoutBtn" class="danger">로그아웃</button>
       <button value="close" class="ghost">닫기</button>
     </form>
   </dialog>

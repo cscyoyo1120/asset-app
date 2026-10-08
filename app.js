@@ -734,16 +734,13 @@ $("#localBtn").onclick = () => {
 
 $("#menuBtn").onclick = () => {
   const g = mode === "google";
-  $("#modeInfo").textContent = g ? "구글 시트에 저장 중이에요. 시트에서 직접 고쳐도 앱에 반영돼요." : "체험 모드: 이 기기 브라우저에만 저장돼요.";
   $("#openSheet").hidden = !(g && sheetId);
   if (sheetId) $("#openSheet").href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
-  $("#syncBtn").hidden = !g;
-  $("#connectBtn").hidden = g;
   $("#menu").showModal();
 };
-$("#syncBtn").onclick = () => { $("#menu").close(); syncNow(); };
 $("#connectBtn").onclick = () => {
   $("#menu").close();
+  if (mode === "google") return syncNow(); // 이미 로그인됨 → 시트에서 불러오기
   dirty = true; ls.set("dirty", true); // 체험 데이터를 새 시트로 올림
   login();
 };

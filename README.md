@@ -17,7 +17,7 @@
 |---|---|
 | `index.html`, `style.css`, `app.js` | 앱 전체 |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | 홈 화면 설치(PWA) |
-| `serve.bat` | 이 PC에서 테스트 (http://localhost:8080) |
+| `serve.bat` | 이 PC에서 테스트 (http://localhost:8082) |
 
 ## 1. Google Cloud 설정 (한 번)
 1. https://console.cloud.google.com → 새 프로젝트 `자산관리`
@@ -26,7 +26,7 @@
    - **대상 → 테스트 사용자**에 쓸 사람들의 Gmail 추가 (최대 100명)
    - **데이터 액세스 → 범위 추가**: `.../auth/drive.file`
 4. **클라이언트 → 클라이언트 만들기**: 웹 애플리케이션
-   - 승인된 JavaScript 원본: `http://localhost:8080`, `https://<깃허브아이디>.github.io`
+   - 승인된 JavaScript 원본: `http://localhost:8082`, `https://<깃허브아이디>.github.io`
 5. 발급된 클라이언트 ID를 `app.js` 맨 위 `CLIENT_ID`에 넣기 (secret은 필요 없음)
 
 테스트 상태에서는 7일마다 다시 로그인해야 한다. 지인이 많아지면 동의 화면을 "프로덕션"으로 게시.
