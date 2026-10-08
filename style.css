@@ -146,3 +146,13 @@ label.pick input { width: 20px; height: 20px; margin: 0; accent-color: var(--acc
 ul.rows .amt.muted { color: var(--muted); font-weight: 500; }
 .re-loans { background: var(--field); border-radius: 10px; padding: 4px 12px; margin: 6px 0 8px; }
 .re-loans .kv { padding: 6px 0; }
+
+/* AI로 데이터 가져오기 */
+.steps { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--sub); }
+.steps li { margin-bottom: 10px; }
+.steps .copy { display: block; width: 100%; margin-top: 8px; color: var(--accent); }
+#importText { width: 100%; background: var(--field); border: 2px solid transparent; border-radius: 12px; padding: 12px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; resize: vertical; outline: none; }
+#importText:focus { border-color: var(--accent); background: #fff; }
+#importInfo { margin: 8px 2px 0; color: var(--sub); min-height: 1em; }
+#importInfo.err { color: var(--up); }
+dialog button:disabled { opacity: .4; }

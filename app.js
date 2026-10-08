@@ -9,17 +9,18 @@ const RENAMED_TABS = { "투자": "주식" }; // 예전 시트 탭 이름 → 새
 
 // 시트 구조: 시트 1행의 머리글(l)로 열을 찾으므로 사용자가 열 순서를 바꿔도 됨
 const SHEETS = {
-  assets: { title: "자산", fields: [
-    { k: "category", l: "분류", t: "select", o: ASSET_CATS },
-    { k: "name", l: "항목명" },
+  // desc·ai: AI에게 줄 입력 형식 안내문(aiPrompt)에 쓰임
+  assets: { title: "자산", desc: "현금성 자산: 은행 예금·적금·청약, CMA, 증권사 예수금 등 (주식·대출·부동산은 넣지 말 것)", fields: [
+    { k: "category", l: "분류", t: "select", o: ASSET_CATS, ai: "증권사 계좌의 현금은 \"증권사 예수금\"" },
+    { k: "name", l: "항목명", ai: "예: \"KB국민은행 입출금\", \"카카오뱅크 적금\"" },
     { k: "amount", l: "금액", t: "number" },
     { k: "memo", l: "메모" },
   ] },
-  loans: { title: "대출", fields: [ // 월 상환액은 계산해서 고정지출에 자동 포함
-    { k: "name", l: "이름" },
+  loans: { title: "대출", desc: "대출: 주택담보대출, 전세대출, 신용대출 등. 월 상환액은 앱이 계산함", fields: [ // 월 상환액은 계산해서 고정지출에 자동 포함
+    { k: "name", l: "이름", ai: "예: \"우리은행 주담대\" (realestate.loans에서 이 이름을 씀)" },
     { k: "total", l: "총 대출금", t: "number", hint: "처음 빌린 금액" },
     { k: "remain", l: "잔여금액", t: "number", hint: "지금 남은 원금" },
-    { k: "rate", l: "금리(%)", t: "number" },
+    { k: "rate", l: "금리(%)", t: "number", ai: "연 금리 숫자, 예: 4.2" },
     { k: "years", l: "상환기간(년)", t: "number", hint: "전체 기간" },
     { k: "method", l: "상환방식", t: "select", o: ["원리금균등", "원금균등", "만기일시"] },
     { k: "start", l: "대출 시작일", t: "date", hint: "선택 · 낸 이자 계산용" },
@@ -27,32 +28,33 @@ const SHEETS = {
     { k: "account", l: "출금계좌" },
     { k: "memo", l: "메모" },
   ] },
-  expenses: { title: "고정지출", fields: [
+  expenses: { title: "고정지출", desc: "매달 고정으로 나가거나 들어오는 돈: 보험, 통신비, 관리비, 구독, 적금 납입, 월급 등. 대출 상환액은 넣지 말 것(loans로 자동 계산)", fields: [
     { k: "kind", l: "구분", t: "select", o: ["지출", "수입"] },
-    { k: "category", l: "분류", t: "list" },
+    { k: "category", l: "분류", t: "list", ai: "예: 보험, 통신요금, 적금, 구독료, 관리비, 급여" },
     { k: "name", l: "내용" },
     { k: "company", l: "회사" },
     { k: "payDay", l: "출금일", t: "day", hint: "매월 며칠, 말일은 31" },
-    { k: "amount", l: "금액", t: "number" },
-    { k: "method", l: "지불수단" },
+    { k: "amount", l: "금액", t: "number", ai: "월 금액" },
+    { k: "method", l: "지불수단", ai: "출금 계좌나 카드" },
     { k: "memo", l: "비고" },
   ] },
-  realestate: { title: "부동산", fields: [
+  realestate: { title: "부동산", desc: "보유 부동산 (전세 보증금은 assets에 \"기타\"로)", fields: [
     { k: "name", l: "이름" },
     { k: "buyPrice", l: "매입가", t: "number", hint: "분양가 또는 매입가" },
     { k: "cost", l: "부대비용", t: "number", hint: "취득세·중개료 등, 선택" },
     { k: "curPrice", l: "현재 시세", t: "number", hint: "주변 시세" },
-    { k: "loans", l: "연결 대출", t: "loans" }, // 대출 탭 이름 목록 ("A, B")
+    { k: "loans", l: "연결 대출", t: "loans", ai: "이 부동산의 대출 이름. loans의 name과 똑같이, 여러 개면 \", \"로 연결. 없으면 \"\"" }, // 대출 탭 이름 목록 ("A, B")
     { k: "memo", l: "메모" },
   ] },
-  invest: { title: "주식", fields: [
-    { k: "type", l: "구분", t: "list" },
+  invest: { title: "주식", desc: "보유 주식·ETF. 증권사 화면의 종목별 보유 현황", fields: [
+    { k: "type", l: "구분", t: "list", ai: "계좌 종류, 예: 해외주식, 국내주식, ISA, 연금저축, 퇴직연금" },
     { k: "name", l: "종목명" },
-    { k: "ticker", l: "티커", hint: "예: NASDAQ:AAPL, KRX:005930 — 넣으면 현재가 자동" },
-    { k: "foreign", l: "해외(달러)", t: "check" },
-    { k: "buyPrice", l: "매입가", t: "number" },
-    { k: "curPrice", l: "현재가", t: "number" },
-    { k: "qty", l: "수량", t: "number" },
+    { k: "ticker", l: "티커", hint: "예: NASDAQ:AAPL, KRX:005930 — 넣으면 현재가 자동",
+      ai: "거래소:코드 형식. 미국은 NASDAQ:AAPL, NYSE:V, NYSEARCA:VOO처럼. 한국은 KRX:6자리코드(예: KRX:005930, KRX:360750). 확실하지 않으면 \"\"" },
+    { k: "foreign", l: "해외(달러)", t: "check", ai: "달러로 거래하는 종목이면 true" },
+    { k: "buyPrice", l: "매입가", t: "number", ai: "1주당 평균 매입가 (해외 종목은 달러)" },
+    { k: "curPrice", l: "현재가", t: "number", ai: "1주당 현재가 (해외 종목은 달러)" },
+    { k: "qty", l: "수량", t: "number", ai: "보유 주식 수 (소수점 가능)" },
   ] },
   history: { title: "기록", fields: [ // 월별 스냅샷 (앱이 자동으로 이번 달 행을 갱신)
     { k: "month", l: "월", t: "month" },
@@ -745,6 +747,110 @@ $("#connectBtn").onclick = () => {
   dirty = true; ls.set("dirty", true); // 체험 데이터를 새 시트로 올림
   login();
 };
+/* ---------- AI로 데이터 가져오기 ---------- */
+// 친구가 자산 화면 캡처 + 이 안내문을 AI에게 주면, AI가 아래 형식의 JSON을 만들어 줌 → 앱에 붙여넣기
+const AI_SHEETS = ["assets", "loans", "expenses", "realestate", "invest"];
+const AI_EXAMPLE = {
+  assets: [{ category: "예금·적금", name: "KB국민은행 입출금", amount: 1250000, memo: "" }, { category: "증권사 예수금", name: "키움증권 예수금", amount: 350000, memo: "" }],
+  loans: [{ name: "우리은행 주담대", total: 200000000, remain: 185000000, rate: 4.2, years: 30, method: "원리금균등", start: "2023-03-15", payDay: 27, account: "우리은행", memo: "" }],
+  expenses: [
+    { kind: "지출", category: "보험", name: "실비보험", company: "KB손보", payDay: 25, amount: 19449, method: "국민은행", memo: "" },
+    { kind: "수입", category: "급여", name: "월급", company: "", payDay: 25, amount: 3500000, method: "", memo: "" },
+  ],
+  realestate: [{ name: "우리집", buyPrice: 450000000, cost: 15000000, curPrice: 520000000, loans: "우리은행 주담대", memo: "" }],
+  invest: [
+    { type: "해외주식", name: "애플", ticker: "NASDAQ:AAPL", foreign: true, buyPrice: 114.3, curPrice: 333.6, qty: 28 },
+    { type: "ISA", name: "TIGER 미국S&P500", ticker: "KRX:360750", foreign: false, buyPrice: 21125, curPrice: 26025, qty: 100 },
+  ],
+};
+const typeDoc = (f) => ({
+  number: "숫자 (쉼표·단위 없이)", day: "숫자 1~31 (말일=31, 없으면 0)", check: "true 또는 false",
+  date: "\"YYYY-MM-DD\" (모르면 \"\")", select: (f.o || []).map((o) => `"${o}"`).join(" | "),
+}[f.t] || "문자열");
+
+function aiPrompt() {
+  return `첨부한 스크린샷(은행·증권·대출·보험 앱 화면 등)을 보고 "자산관리" 앱에 넣을 JSON을 만들어줘.
+
+[규칙]
+- 결과는 JSON 하나만 출력 (설명 없이 코드블록 하나)
+- 숫자는 쉼표·"원"·"%"·"주" 없이 숫자만. 금액은 원 단위 (대출 금액도 양수), 해외 주식 가격만 달러
+- 스크린샷에 없는 값은 지어내지 말고 숫자는 0, 글자는 ""
+- 해당되는 항목(키)만 넣어도 됨. 넣지 않은 키는 앱의 기존 데이터가 그대로 유지됨
+- 키 이름과 선택지 값은 아래 정의와 글자까지 똑같이
+
+[형식] 최상위는 객체, 각 키는 배열
+${AI_SHEETS.map((k) => `
+■ ${k} — ${SHEETS[k].desc}
+${SHEETS[k].fields.map((f) => `- ${f.k} (${f.l}): ${typeDoc(f)}${f.ai || f.hint ? " — " + (f.ai || f.hint) : ""}`).join("\n")}`).join("\n")}
+
+[예시]
+{
+${Object.entries(AI_EXAMPLE).map(([k, rows]) => `  "${k}": [\n${rows.map((o) => "    " + JSON.stringify(o)).join(",\n")}\n  ]`).join(",\n")}
+}`;
+}
+
+// AI 답변 → 앱 데이터. 코드블록·앞뒤 설명이 섞여 있어도 { … } 부분만 읽고, 값은 앱 형식으로 정리
+const toNum = (v) => (typeof v === "number" ? v : Number(String(v ?? "").replace(/[^\d.-]/g, "")) || 0);
+const normalize = (k, o) => Object.fromEntries(SHEETS[k].fields.map((f) => {
+  const v = o?.[f.k];
+  if (f.t === "number") return [f.k, k === "loans" ? Math.abs(toNum(v)) : toNum(v)];
+  if (f.t === "day") return [f.k, Math.min(31, Math.max(0, parseDay(v ?? 0)))];
+  if (f.t === "check") return [f.k, v === true || /^(y|yes|true|o|1)$/i.test(String(v ?? "").trim())];
+  if (f.t === "select") return [f.k, f.o.includes(v) || (k === "assets" && v === "대출") ? v : f.k === "category" ? "기타" : f.o[0]]; // 자산에 들어온 "대출"은 migrate()가 대출 탭으로 옮김
+  if (f.t === "date") return [f.k, /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ""];
+  if (f.t === "loans") return [f.k, Array.isArray(v) ? v.join(", ") : String(v ?? "")];
+  return [f.k, String(v ?? "").trim()];
+}));
+function parseImport(textIn) {
+  const s = String(textIn), a = s.indexOf("{"), b = s.lastIndexOf("}");
+  if (a < 0 || b < a) throw new Error("JSON을 찾지 못했어요");
+  const data = JSON.parse(s.slice(a, b + 1));
+  const out = {};
+  for (const k of AI_SHEETS) if (Array.isArray(data[k])) out[k] = data[k].map((o) => normalize(k, o)).filter((o) => o.name);
+  if (!Object.keys(out).length) throw new Error(`${AI_SHEETS.join(", ")} 중 하나는 있어야 해요`);
+  return out;
+}
+// add: 기존 데이터 뒤에 추가 / replace: 파일에 있는 항목(키)만 바꾸고 나머지는 그대로
+function applyImport(data, how) {
+  for (const k in data) db[k] = how === "add" ? [...db[k], ...data[k]] : data[k];
+  migrate();
+  changed();
+}
+
+let pending = null;
+$("#importBtn").onclick = () => {
+  $("#menu").close();
+  $("#importText").value = ""; $("#importInfo").textContent = ""; pending = null;
+  $("#importAdd").disabled = $("#importReplace").disabled = true;
+  $("#importDlg").returnValue = "";
+  $("#importDlg").showModal();
+};
+$("#copyPrompt").onclick = async () => {
+  const t = aiPrompt();
+  try { await navigator.clipboard.writeText(t); }
+  catch { const ta = Object.assign(document.createElement("textarea"), { value: t }); document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+  $("#copyPrompt").textContent = "복사됐어요 ✓ AI에게 붙여넣으세요";
+  setTimeout(() => ($("#copyPrompt").textContent = "AI 안내문 복사"), 3000);
+};
+$("#importText").oninput = () => {
+  try {
+    pending = parseImport($("#importText").value);
+    $("#importInfo").textContent = Object.entries(pending).map(([k, rows]) => `${SHEETS[k].title} ${rows.length}건`).join(" · ")
+      + " — 바꾸기: 이 항목들만 새 내용으로 / 추가: 기존 뒤에 덧붙임";
+    $("#importInfo").className = "small";
+  } catch (e) {
+    pending = null;
+    $("#importInfo").textContent = $("#importText").value.trim() ? "읽을 수 없어요: " + e.message : "";
+    $("#importInfo").className = "small err";
+  }
+  $("#importAdd").disabled = $("#importReplace").disabled = !pending;
+};
+$("#importDlg").addEventListener("close", () => {
+  const how = $("#importDlg").returnValue;
+  if (pending && (how === "add" || how === "replace")) applyImport(pending, how);
+  pending = null;
+});
+
 $("#logoutBtn").onclick = () => {
   if (!confirm("이 기기의 데이터와 로그인 정보를 지울까요? (구글 시트의 데이터는 그대로 남아요)")) return;
   if (token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(token.v);

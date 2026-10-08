@@ -64,8 +64,29 @@
       <a id="openSheet" target="_blank" rel="noopener" class="btn ghost">구글 시트에서 열기</a>
       <button type="button" id="syncBtn" class="ghost">구글 시트에서 불러오기</button>
       <button type="button" id="connectBtn" class="primary">구글 로그인 (체험 데이터를 시트에 저장)</button>
+      <button type="button" id="importBtn" class="ghost">AI로 데이터 가져오기</button>
       <button type="button" id="logoutBtn" class="danger">로그아웃 (이 기기 데이터 지우기)</button>
       <button value="close" class="ghost">닫기</button>
+    </form>
+  </dialog>
+
+  <!-- AI로 데이터 가져오기 -->
+  <dialog id="importDlg">
+    <form method="dialog">
+      <h3>AI로 데이터 가져오기</h3>
+      <ol class="steps">
+        <li>안내문을 복사해서 <b>자산 화면 캡처</b>와 함께 AI(ChatGPT·Claude·Gemini 등)에게 보내세요.
+          <button type="button" id="copyPrompt" class="copy">AI 안내문 복사</button></li>
+        <li>AI가 만든 JSON을 아래에 붙여넣으세요.</li>
+      </ol>
+      <textarea id="importText" rows="7" placeholder='{ "assets": [ … ], "invest": [ … ] }' spellcheck="false"></textarea>
+      <p id="importInfo" class="small"></p>
+      <div class="row">
+        <button value="cancel" formnovalidate>취소</button>
+        <span class="grow"></span>
+        <button value="add" id="importAdd" disabled>추가</button>
+        <button value="replace" id="importReplace" class="primary" disabled>바꾸기</button>
+      </div>
     </form>
   </dialog>
 
