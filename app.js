@@ -4,7 +4,7 @@ const SCOPE = "https://www.googleapis.com/auth/drive.file"; // 이 앱이 만든
 const FILE_NAME = "자산관리";
 
 const ASSET_CATS = ["예금·적금", "증권사 예수금", "기타"]; // 증권사 예수금은 주식 탭에서 보여줌, 대출은 대출 탭
-const CAT_COLORS = { "예금·적금": "#3182F6", "부동산": "#1B4FA8", "주식": "#8BBEFF", "기타": "#B0B8C1" };
+const CAT_COLORS = { "예금·적금": "#3182F6", "부동산": "#1B4FA8", "전세 보증금": "#5E7FBF", "주식": "#8BBEFF", "기타": "#B0B8C1" };
 const RENAMED_TABS = { "투자": "주식" }; // 예전 시트 탭 이름 → 새 이름
 
 // 시트 구조: 시트 1행의 머리글(l)로 열을 찾으므로 사용자가 열 순서를 바꿔도 됨
@@ -16,8 +16,9 @@ const SHEETS = {
     { k: "amount", l: "금액", t: "number" },
     { k: "memo", l: "메모" },
   ] },
-  loans: { title: "대출", desc: "대출: 주택담보대출, 전세대출, 신용대출 등. 월 상환액은 앱이 계산함", fields: [ // 월 상환액은 계산해서 고정지출에 자동 포함
+  loans: { title: "대출", desc: "대출: 주택담보대출, 전세대출, 신용대출 등. 월 상환액은 앱이 계산함. 전세대출이면 deposit에 전세 보증금", fields: [ // 월 상환액은 계산해서 고정지출에 자동 포함
     { k: "name", l: "이름", ai: "예: \"우리은행 주담대\" (realestate.loans에서 이 이름을 씀)" },
+    { k: "deposit", l: "전세 보증금", t: "number", hint: "전세대출만 · 넣으면 자산으로 잡혀요", ai: "전세자금대출이면 전세 보증금(전세가), 아니면 0" },
     { k: "total", l: "총 대출금", t: "number", hint: "처음 빌린 금액" },
     { k: "remain", l: "잔여금액", t: "number", hint: "지금 남은 원금" },
     { k: "rate", l: "금리(%)", t: "number", ai: "연 금리 숫자, 예: 4.2" },
@@ -38,7 +39,7 @@ const SHEETS = {
     { k: "method", l: "지불수단", ai: "출금 계좌나 카드" },
     { k: "memo", l: "비고" },
   ] },
-  realestate: { title: "부동산", desc: "보유 부동산 (전세 보증금은 assets에 \"기타\"로)", fields: [
+  realestate: { title: "부동산", desc: "보유 부동산 (전세 보증금은 loans의 deposit으로)", fields: [
     { k: "name", l: "이름" },
     { k: "buyPrice", l: "매입가", t: "number", hint: "분양가 또는 매입가" },
     { k: "cost", l: "부대비용", t: "number", hint: "취득세·중개료 등, 선택" },
@@ -441,12 +442,13 @@ function calc() {
   const re = db.realestate.map((p) => reInfo(p, loans));
   const reValue = sum(re, (p) => p.curPrice);
   const debt = -sum(loans, (l) => l.remain); // 음수. 부동산에 연결된 대출도 여기서 한 번만 셈
+  const jeonse = sum(loans, (l) => l.deposit); // 전세 보증금은 자산, 전세대출은 위 debt에서 빠짐
   return {
-    inv, byCat, investTotal, fixedIn, fixedOut, upcoming, re, reValue, loans, loanPayTotal, debt,
+    inv, byCat, investTotal, fixedIn, fixedOut, upcoming, re, reValue, jeonse, loans, loanPayTotal, debt,
     investGain: sum(inv, (r) => r.gain),
     deposit: byCat["예금·적금"] || 0,
     cash: byCat["증권사 예수금"] || 0,
-    net: sum(db.assets, (a) => a.amount) + investTotal + reValue + debt,
+    net: sum(db.assets, (a) => a.amount) + investTotal + reValue + jeonse + debt,
   };
 }
 
@@ -519,9 +521,28 @@ function trendChart(hist) {
     <ul class="rows">${pts.slice(-3).reverse().map((p) => `<li class="static"><div class="main"><div class="name">${p.month.replace("-", "년 ")}월</div></div><div class="amt">${fmt(p.net)}</div></li>`).join("")}</ul>`;
 }
 
+// 대시보드 부동산·대출: 매매(시세 − 연결 대출) / 전세(보증금 − 전세대출) / 그 밖의 대출
+function propCard(c) {
+  if (!c.re.length && !c.loans.length) return "";
+  const linked = new Set(c.re.flatMap((p) => p.mine.map((l) => l.name)));
+  const jl = c.loans.filter((l) => l.deposit);
+  const rl = c.loans.filter((l) => !l.deposit && linked.has(l.name));
+  const other = c.loans.filter((l) => !l.deposit && !linked.has(l.name));
+  const loanKv = (l, label = l.name) => kv(`<small>└</small> ${esc(label)}`, `${fmt(-l.remain)}<small><br>월 ${fmt(l.pmt)}</small>`);
+  const block = (title, net, body) => `<div class="pgrp"><div class="kv head"><span>${title}</span><b>${fmt(net)}</b></div>${body}</div>`;
+  return `<div class="card"><h4>부동산 · 대출 <span class="sum">${fmt(c.reValue + c.jeonse + c.debt)}</span></h4>
+    ${c.re.length ? block("매매 부동산 <small>시세 − 대출</small>", c.reValue - sum(rl, (l) => l.remain),
+      c.re.map((p) => kv(esc(p.name), fmt(p.curPrice)) + p.mine.filter((l) => !l.deposit).map((l) => loanKv(l)).join("")).join("")) : ""}
+    ${jl.length ? block("전세 <small>보증금 − 대출</small>", c.jeonse - sum(jl, (l) => l.remain),
+      jl.map((l) => kv(`${esc(l.name)} 보증금`, fmt(l.deposit)) + loanKv(l, "전세대출")).join("")) : ""}
+    ${other.length ? block("기타 대출", -sum(other, (l) => l.remain), other.map((l) => loanKv(l)).join("")) : ""}
+    ${kv("대출 잔액 합계", `${fmt(c.debt)}<small><br>월 ${fmt(c.loanPayTotal)}</small>`)}
+  </div>`;
+}
+
 const views = {
   dash(c) {
-    const parts = [["예금·적금", c.deposit], ["부동산", c.reValue], ["주식", c.investTotal + c.cash], ["기타", c.byCat["기타"] || 0]].filter(([, v]) => v > 0);
+    const parts = [["예금·적금", c.deposit], ["부동산", c.reValue], ["전세 보증금", c.jeonse], ["주식", c.investTotal + c.cash], ["기타", c.byCat["기타"] || 0]].filter(([, v]) => v > 0);
     const total = sum(parts, ([, v]) => v);
     let acc = 0;
     const grad = parts.map(([k, v]) => `${CAT_COLORS[k]} ${(acc / total) * 360}deg ${((acc += v) / total) * 360}deg`).join(",");
@@ -535,12 +556,11 @@ const views = {
         ${stat("순자산", fmt(c.net), { hero: true, sub: diff == null ? "자산 − 부채" : `지난달보다 <span class="${updown(diff)}">${sign(diff)}</span>` })}
         ${stat("예금·적금", fmt(c.deposit))}
         ${stat("주식 <small>(예수금 포함)</small>", fmt(c.investTotal + c.cash), { sub: `<span class="${updown(c.investGain)}">${sign(c.investGain)}</span>` })}
-        ${stat("부동산 시세", fmt(c.reValue), { sub: `${c.re.length}건` })}
-        ${stat("대출 잔액", fmt(c.debt), { sub: `월 상환 ${fmt(c.loanPayTotal)}` })}
-        ${stat("달러 환율", fxLabel(db.fx), { sub: mode === "google" ? "구글 파이낸스" : "ECB 기준 · 매일 갱신" })}
         ${stat("월 여유자금", fmt(c.fixedIn - c.fixedOut), { cls: c.fixedIn - c.fixedOut < 0 ? "up" : "", sub: "고정수입 − 고정지출" })}
-        ${stat("이번 달 남은 출금", fmt(sum(c.upcoming, (e) => e.amount)), { wide: true, sub: `${c.upcoming.length}건 남음` })}
+        ${stat("이번 달 남은 출금", fmt(sum(c.upcoming, (e) => e.amount)), { sub: `${c.upcoming.length}건 남음` })}
+        ${stat("달러 환율", fxLabel(db.fx), { wide: true, sub: mode === "google" ? "구글 파이낸스" : "ECB 기준 · 매일 갱신" })}
       </div>
+      ${propCard(c)}
       <div class="card"><h4>순자산 추이</h4>${trendChart(db.history)}</div>
       <div class="card"><h4>자산 구성 <span class="muted small">부채 제외</span></h4>
         ${total ? `<div class="donut" style="background:conic-gradient(${grad})" role="img" aria-label="자산 구성 도넛 차트"></div>
@@ -561,6 +581,8 @@ const views = {
         ${c.re.map((p, i) => reCard(p, i)).join("") || `<div class="empty">분양가·대출 조건·주변 시세를 넣으면 손익과 본전 시세를 계산해요.</div>`}
         <button class="add" data-add="realestate" data-prefill="{}">+ 추가</button>
       </div>` +
+      section("전세 보증금", c.jeonse, c.loans.filter((l) => l.deposit).map((l) => rowLi("loans", db.loans[c.loans.indexOf(l)], l.name,
+        `대출 ${fmt(l.remain)} · 내 돈 ${fmt(l.deposit - l.remain)}`, fmt(l.deposit))), "loans", { method: "만기일시" }, CAT_COLORS["전세 보증금"]) +
       assetSection("예금·적금") +
       section("대출", c.debt, c.loans.map((l) => loanLi(l, c)), "loans", { method: "원리금균등" }, "var(--muted)") +
       assetSection("기타");
@@ -587,8 +609,8 @@ const views = {
         ${stat("월 고정지출", fmt(c.fixedOut))}
         ${stat("월 여유자금", fmt(c.fixedIn - c.fixedOut), { wide: true, cls: c.fixedIn - c.fixedOut < 0 ? "up" : "" })}
       </div>
-      ${c.upcoming.length ? `<div class="card"><h4>이번 달 남은 출금 <span class="sum">${fmt(sum(c.upcoming, (e) => e.amount))}</span></h4>
-        <ul class="rows">${c.upcoming.map((u) => rowLi(u.src, u.ref, u.name, dayLabel(u.payDay), fmt(u.amount))).join("")}</ul></div>` : ""}
+      ${c.upcoming.length ? `<details class="card fold"><summary><span>이번 달 남은 출금 <small class="muted">${c.upcoming.length}건 · 다음 ${dayLabel(c.upcoming[0].payDay)}</small></span><span class="sum">${fmt(sum(c.upcoming, (e) => e.amount))}</span></summary>
+        <ul class="rows">${c.upcoming.map((u) => rowLi(u.src, u.ref, u.name, dayLabel(u.payDay), fmt(u.amount))).join("")}</ul></details>` : ""}
       ${kindBlock("수입")}${kindBlock("지출")}`;
   },
 

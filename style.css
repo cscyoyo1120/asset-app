@@ -159,3 +159,11 @@ ul.rows .amt.muted { color: var(--muted); font-weight: 500; }
 #importInfo { margin: 8px 2px 0; color: var(--sub); min-height: 1em; }
 #importInfo.err { color: var(--up); }
 dialog button:disabled { opacity: .4; }
+.card.fold { padding-bottom: 18px; }
+.card.fold summary { display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; font-weight: 700; cursor: pointer; list-style: none; }
+.card.fold summary::-webkit-details-marker { display: none; }
+.card.fold summary small { font-size: 13px; font-weight: 500; }
+.card.fold[open] summary { margin-bottom: 6px; }
+.pgrp { padding: 8px 0; border-top: 1px solid var(--line); }
+.pgrp .kv.head { font-weight: 700; color: var(--text); font-size: 15px; }
+.pgrp + .kv { border-top: 1px solid var(--line); padding-top: 10px; }
