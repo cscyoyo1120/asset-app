@@ -118,15 +118,19 @@ function setStatus(text, err) {
 }
 
 /* ---------- 구글 인증 ---------- */
-// ponytail: 브라우저 전용 토큰 방식이라 1시간마다 만료 → "다시 연결" 한 번 탭. 자동 갱신은 서버가 있어야 가능
+// ponytail: 브라우저 전용 토큰이라 1시간마다 만료 → 다음 터치 때 조용히 다시 받음(창이 잠깐 떴다 닫힘). 완전 자동 갱신은 서버가 있어야 가능
 let tokenClient;
+let auto = true; // 자동 재연결 시도 가능 (실패하면 배너로 직접 누르게 함)
+const loginFailed = () => { $("#banner").hidden = false; setStatus("로그인 실패", true); };
 function initAuth() {
   if (tokenClient || !window.google?.accounts?.oauth2 || !CLIENT_ID) return !!tokenClient;
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPE,
+    error_callback: loginFailed, // 창을 닫았거나 못 열었을 때
     callback: (r) => {
-      if (r.error) return setStatus("로그인 실패", true);
+      if (r.error) return loginFailed();
+      auto = true;
       token = { v: r.access_token, exp: Date.now() + (r.expires_in - 60) * 1000 };
       ls.set("token", token);
       mode = "google"; ls.set("mode", mode);
@@ -151,9 +155,10 @@ async function api(url, opt = {}) {
   if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 200)}`);
   return r.json();
 }
+// 보기만 할 땐 경고 없이 기기 데이터로 보여주고, 못 올린 변경이 있거나 자동 재연결이 실패했을 때만 배너
 function needLogin() {
-  $("#banner").hidden = false;
-  setStatus("연결 끊김", true);
+  $("#banner").hidden = !dirty && auto;
+  setStatus(dirty ? "연결 끊김 · 저장 대기" : "누르면 다시 연결", dirty);
   return new Error("login");
 }
 
@@ -746,6 +751,12 @@ async function syncNow() {
   catch (e) { if (e.message !== "login") { console.error(e); setStatus("동기화 실패", true); } }
 }
 
+// 토큰이 지났으면 아무 곳이나 처음 누를 때 다시 받음 (구글 창은 사용자 터치 안에서만 열 수 있음)
+addEventListener("click", (e) => {
+  if (mode !== "google" || tokenOk() || !auto || e.target.closest("#reconnect, #loginBtn, #connectBtn")) return;
+  auto = false;
+  login();
+}, true);
 $("#loginBtn").onclick = login;
 $("#reconnect").onclick = login;
 $("#localBtn").onclick = () => {
@@ -882,7 +893,8 @@ let lastPull = 0;
 function comeBack() {
   if (mode !== "google") return;
   if (dirty) return flush();
-  if (!sheetId || !tokenOk() || $("#editor").open || Date.now() - lastPull < 5000) return; // 편집 중엔 안 바꿈
+  if (!tokenOk()) return void needLogin();
+  if (!sheetId || $("#editor").open || Date.now() - lastPull < 5000) return; // 편집 중엔 안 바꿈
   lastPull = Date.now();
   pull().catch(() => {});
 }
