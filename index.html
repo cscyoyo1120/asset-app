@@ -61,10 +61,13 @@
     <form method="dialog">
       <h3>설정</h3>
       <p class="sec">구글 시트</p>
-      <button type="button" id="connectBtn" class="primary">구글 로그인 (시트 불러오기)</button>
+      <button type="button" id="pullBtn" class="primary">구글 시트 불러오기</button>
+      <button type="button" id="pushBtn" class="primary">구글 시트에 저장하기</button>
       <a id="openSheet" target="_blank" rel="noopener" class="btn ghost">구글 시트에서 열기</a>
       <p class="sec">가져오기</p>
       <button type="button" id="importBtn" class="ghost">AI로 데이터 가져오기</button>
+      <p class="sec">부동산 실거래가</p>
+      <button type="button" id="keyBtn" class="ghost">공공데이터포털 인증키</button>
       <hr />
       <button type="button" id="logoutBtn" class="danger">로그아웃</button>
       <button value="close" class="ghost">닫기</button>
@@ -85,8 +88,7 @@
       <div class="row">
         <button value="cancel" formnovalidate>취소</button>
         <span class="grow"></span>
-        <button value="add" id="importAdd" disabled>추가</button>
-        <button value="replace" id="importReplace" class="primary" disabled>바꾸기</button>
+        <button value="merge" id="importApply" class="primary" disabled>가져오기</button>
       </div>
     </form>
   </dialog>

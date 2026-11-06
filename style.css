@@ -167,3 +167,6 @@ dialog button:disabled { opacity: .4; }
 .pgrp { padding: 8px 0; border-top: 1px solid var(--line); }
 .pgrp .kv.head { font-weight: 700; color: var(--text); font-size: 15px; }
 .pgrp + .kv { border-top: 1px solid var(--line); padding-top: 10px; }
+.f[data-only][hidden] { display: none; }
+.price-src { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+.price-src .refresh { margin: 0; flex: none; }
